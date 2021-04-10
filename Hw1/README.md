@@ -1,5 +1,10 @@
 # Homework 1 ADL NTU 109 Spring
 
+## file explain
+dataset , model for  intent classification
+slot_dataset , slot_model for  slot tagging
+util.py 產生單字對應的index及生成context vector
+
 ## Environment
 ```shell
 # If you have conda, we recommend you to build a conda environment called "adl"
