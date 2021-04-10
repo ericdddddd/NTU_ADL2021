@@ -35,5 +35,5 @@ bash ./intent_cls.sh /path/to/test.json /path/to/pred.csv
 # python3.8 test_intent.py --test_file "${1}" --ckpt_path ckpt/intent/best.model --pred_file "${2}"
 bash ./slot_tag.sh /path/to/test.json /path/to/pred.csv
 #python3.8 test_slot.py --test_file "${1}" --ckpt_path ckpt/slot/best.model --pred_file "${2}"
-# 建議使用絕對路徑，使用相對路徑請加上.
+# 建議使用絕對路徑，使用相對路徑請加上./
 ```
