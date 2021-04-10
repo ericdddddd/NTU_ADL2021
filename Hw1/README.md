@@ -2,8 +2,10 @@
 
 ## file explain
 dataset , model for  intent classification
+<br>
 slot_dataset , slot_model for  slot tagging
-util.py 產生單字對應的index及生成context vector
+<br>
+utils.py 產生單字對應的index及生成context vector
 
 ## Environment
 ```shell
