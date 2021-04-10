@@ -1,0 +1,12 @@
+{
+  "Pad": 0,
+  "B-date": 1,
+  "B-time": 2,
+  "B-people": 3,
+  "I-people": 4,
+  "I-date": 5,
+  "B-last_name": 6,
+  "B-first_name": 7,
+  "I-time": 8,
+  "O": 9
+}
