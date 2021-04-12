@@ -36,4 +36,5 @@ bash ./intent_cls.sh /path/to/test.json /path/to/pred.csv
 bash ./slot_tag.sh /path/to/test.json /path/to/pred.csv
 #python3.8 test_slot.py --test_file "${1}" --ckpt_path ckpt/slot/best.model --pred_file "${2}"
 # 建議使用絕對路徑，使用相對路徑請加上./
+# pred_file目錄請先建立，否則會造成錯誤
 ```
