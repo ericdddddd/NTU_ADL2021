@@ -15,30 +15,6 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-
-def parse_args() -> Namespace:
-    parser = ArgumentParser()
-    parser.add_argument(
-        "--data_dir",
-        type= str,
-        help="Directory to the dataset.",
-        default="./dataset/",
-    ),
-    parser.add_argument(
-        "--split_ratio",
-        type= float,
-        help= "split ratio for train_dataset",
-        default = 0.95,
-    ),
-    parser.add_argument(
-        "--input_length",
-        type= int,
-        help= "BERT token maximum input length",
-        default = 512,
-    ),
-    args = parser.parse_args()
-    return args
-
 def read_train_data(args):
 
     #path
@@ -169,7 +145,7 @@ def collate_fn(batch):
         token_type_ids = pad_sequence(token_type_ids, batch_first=True).transpose(1,2).contiguous()
         labels = torch.stack(labels)
         return input_ids, attention_mask, token_type_ids, labels
-
+"""
 if __name__ == "__main__":
     
     args = parse_args()
@@ -196,5 +172,6 @@ if __name__ == "__main__":
     print(input_ids)
     print(attention_mask)
     print(labels)
+"""
 
 
