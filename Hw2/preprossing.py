@@ -6,6 +6,8 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from transformers import BertTokenizerFast
 from torch.nn.utils.rnn import pad_sequence
+from torch.utils.data import Dataset, DataLoader
+from context_Train_dataset import TrainingDataset
 
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(message)s",
@@ -62,6 +64,7 @@ def preprocess_data(args , train_data , context):
     max_input_length = args.input_length
     tokenizer = BertTokenizerFast.from_pretrained('bert-base-chinese')
     #processing data....
+    logging.info("data processing to BERT Token")
     for i , data in enumerate(train_data):
         # Make question tokens for BERT
         question_tokens = tokenizer.tokenize(data['question']) # 轉換成BERT格式的token(str)
@@ -76,9 +79,14 @@ def preprocess_data(args , train_data , context):
         paragraphs_ids.remove(relevant_context_ids) # 將正解先抽出，取出錯誤的三篇
         # 取出relevant context 及 三篇錯誤的context做多選
 
+        if len(paragraphs_ids) < 3 : # 紀錄負context篇數，若不足三篇後續須padding
+            neg_context_len = len(paragraphs_ids)
+        else :
+            neg_context_len = 3
+
         # 尚須考慮negative context少於3的情況
-        neg_context_ids = random.sample(paragraphs_ids, 3)  # random choose 3 context
-        relevant_position = random.randint(0, 3) # relevant_context position
+        neg_context_ids = random.sample(paragraphs_ids, neg_context_len)  # random choose 3 context
+        relevant_position = random.randint(0, neg_context_len) # relevant_context position
         rel_neg_context_ids = neg_context_ids # 將relevant插入
         rel_neg_context_ids.insert(relevant_position, relevant_context_ids)
         labeled_sample = (rel_neg_context_ids, relevant_position) # (list , label)
@@ -89,7 +97,7 @@ def preprocess_data(args , train_data , context):
 
         for context_id in labeled_sample[0]:
 
-            # get  4 context token_ids
+            # get  context token_ids
             context_text = context[context_id]
             context_tokens = tokenizer.tokenize(context_text)
             context_tokens_ids = tokenizer.convert_tokens_to_ids(context_tokens)
@@ -108,7 +116,7 @@ def preprocess_data(args , train_data , context):
                 
             # convert and collect inputs as tensors
             input_ids = torch.LongTensor(input_ids)
-            attention_mask = torch.FloatTensor(attention_mask)
+            attention_mask = torch.LongTensor(attention_mask)
             token_type_ids = torch.LongTensor(token_type_ids)
             paired_input_ids.append(input_ids)
             paired_attention_mask.append(attention_mask)
@@ -116,6 +124,22 @@ def preprocess_data(args , train_data , context):
 
         label = torch.LongTensor([labeled_sample[1]]).squeeze()
         
+        # padding 選項至 4 個 ，sequence只需放quesion，pad_sequence 會補齊長度
+        num_of_choice = 4
+        padding_len = num_of_choice - len(labeled_sample[0])
+        for padding in range(padding_len):
+            # make input sequences for BERT (串接question , context)
+            input_ids = question_token_ids
+            token_type_ids = [0 for token_id in question_token_ids]
+            attention_mask = [1 for token_id in input_ids]
+            # convert and collect inputs as tensors
+            input_ids = torch.LongTensor(input_ids)
+            attention_mask = torch.LongTensor(attention_mask)
+            token_type_ids = torch.LongTensor(token_type_ids)
+            paired_input_ids.append(input_ids)
+            paired_attention_mask.append(attention_mask)
+            paired_token_type_ids.append(token_type_ids)
+
         # Pre-pad tensor pairs for efficiency
         paired_input_ids = pad_sequence(paired_input_ids, batch_first=True)
         paired_attention_mask = pad_sequence(paired_attention_mask, batch_first=True)
@@ -129,19 +153,48 @@ def preprocess_data(args , train_data , context):
         instance['label'] = label
         instances.append(instance)
         print("Progress: %d/%d\r" % (i+1, len(train_data)), end='')
+    
+    logging.info("Finishing convert to BERT Token!")
+    #split train , validation data  => split ratio : ( 1 - split ratio)
+    data_len = int(len(instances) * args.split_ratio)
+    train_data , validation_data =  instances[:data_len] , instances[data_len:]
 
-    return instances
+    return train_data , validation_data
 
-#train_instances = preprocess_df(train_df)
-#dev_instances = preprocess_df(dev_df)
-
-#print("num. train_instances: %d" % len(train_instances))
-#print("num. dev_instances: %d" % len(dev_instances))
-#print("input_ids.T shape:", train_instances[0]['input_ids'].T.shape)
-#train_instances[0]['input_ids'].T
+# Dataloader collate_fn 
+def collate_fn(batch):
+        input_ids, attention_mask, token_type_ids, labels = zip(*batch)
+        input_ids = pad_sequence(input_ids, batch_first=True).transpose(1,2).contiguous()  # re-transpose
+        attention_mask = pad_sequence(attention_mask, batch_first=True).transpose(1,2).contiguous()
+        token_type_ids = pad_sequence(token_type_ids, batch_first=True).transpose(1,2).contiguous()
+        labels = torch.stack(labels)
+        return input_ids, attention_mask, token_type_ids, labels
 
 if __name__ == "__main__":
+    
     args = parse_args()
     # args.output_dir.mkdir(parents=True, exist_ok=True)
+
     train_data , context = read_train_data(args)
-    preprocess_data(args , train_data  , context)
+    train_instances , dev_instances = preprocess_data(args , train_data  , context)
+    print("num. train_instances: %d" % len(train_instances))
+    print("num. dev_instances: %d" % len(dev_instances))
+    print("train_input_ids.T shape:", train_instances[0]['input_ids'].T.shape)
+    print("dev_input_ids.T shape:", dev_instances[0]['input_ids'].T.shape)
+    print(train_instances[0]['input_ids'].T)
+    
+    logging.info("generate dataloader....")
+    train_dataset = TrainingDataset(train_instances)
+    dev_dataset = TrainingDataset(dev_instances)
+    train_dataloader = DataLoader(train_dataset, collate_fn=collate_fn, shuffle=True, \
+                            batch_size = 2 , num_workers = 4)
+    logging.info("dataloader OK!")
+    for batch in train_dataloader:
+    input_ids, attention_mask, token_type_ids, labels = batch
+    break
+    print(input_ids.shape)
+    print(input_ids)
+    print(attention_mask)
+    print(labels)
+
+
