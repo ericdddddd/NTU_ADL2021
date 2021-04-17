@@ -9,6 +9,7 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset, DataLoader
 from context_Train_dataset import TrainingDataset
 
+
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(message)s",
     level=logging.INFO,
@@ -55,10 +56,10 @@ def preprocess_data(args , train_data , context):
         paragraphs_ids.remove(relevant_context_ids) # 將正解先抽出，取出錯誤的三篇
         # 取出relevant context 及 三篇錯誤的context做多選
 
-        if len(paragraphs_ids) < 3 : # 紀錄負context篇數，若不足三篇後續須padding
-            neg_context_len = len(paragraphs_ids)
-        else :
+        if len(paragraphs_ids) >= 3 : # 紀錄負context篇數，若不足三篇後續須padding
             neg_context_len = 3
+        else :
+            neg_context_len = len(paragraphs_ids)
 
         # 尚須考慮negative context少於3的情況
         neg_context_ids = random.sample(paragraphs_ids, neg_context_len)  # random choose 3 context
