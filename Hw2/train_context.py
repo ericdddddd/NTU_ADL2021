@@ -1,4 +1,5 @@
 from time import time
+from datetime import timedelta
 import numpy  as np
 import torch
 from torch.optim import AdamW
@@ -34,9 +35,9 @@ def main(args):
     logging.info("generate dataloader....")
     train_dataset = TrainingDataset(train_instances)
     dev_dataset = TrainingDataset(dev_instances)
-    train_dataloader = DataLoader(train_dataset, collate_fn = preprossing.collate_fn, shuffle=True, \
+    train_dataloader = DataLoader(train_dataset, collate_fn = sec1_preprossing.collate_fn, shuffle=True, \
                             batch_size = args.batch_size , num_workers = 2)
-    dev_dataloader = DataLoader(dev_dataset, collate_fn = preprossing.collate_fn, shuffle=True, \
+    dev_dataloader = DataLoader(dev_dataset, collate_fn = sec1_preprossing.collate_fn, shuffle=True, \
                             batch_size = args.batch_size , num_workers = 2)                        
     logging.info("dataloader OK!")
     # model
