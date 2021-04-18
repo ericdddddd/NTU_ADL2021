@@ -19,7 +19,7 @@ logging.basicConfig(
 )
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model_name = 'bert-base-chinese'
+model_name = './ckpt/QA/bert-base-chinese_epoch_2'
 
 def main(args):
     # load data
@@ -30,12 +30,13 @@ def main(args):
     train_dataset = TrainingDataset(train_instances)
     dev_dataset = TrainingDataset(dev_instances)
     train_dataloader = DataLoader(train_dataset, collate_fn = QA_preprossing.collate_fn, shuffle=True, \
-                            batch_size = args.batch_size , num_workers = 2)
+                            batch_size = args.batch_size) # num_workers = 2
     dev_dataloader = DataLoader(dev_dataset, collate_fn = QA_preprossing.collate_fn, shuffle=True, \
-                            batch_size = args.batch_size , num_workers = 2)                        
+                            batch_size = args.batch_size) # num_workers = 2
+    # on windows , dataloader can't add num_workers , otherwise may cause some problems !                        
     logging.info("dataloader OK!")
     # model
-    model = BertForQuestionAnswering.from_pretrained('bert-base-chinese')
+    model = BertForQuestionAnswering.from_pretrained(model_name)
     print(model)
     model.to(device)
     # model parameters
@@ -52,8 +53,8 @@ def main(args):
     t_batch = len(train_dataloader) 
     v_batch = len(dev_dataloader)
 
-    total_loss, total_acc = 0, 0
-    for epoch in range(1, args.num_epoch + 1):
+    for epoch in range(3, 4):
+        total_loss, total_acc = 0, 0
         model.train()
         # train step
         for i, batch in enumerate(train_dataloader, start=1):
@@ -136,13 +137,13 @@ def parse_args() -> Namespace:
     parser.add_argument("--lr", type=float, default=1e-5)
 
     # data loader
-    parser.add_argument("--batch_size", type=int, default = 10)
+    parser.add_argument("--batch_size", type=int, default = 5)
 
     # training
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default = "cuda:0"
     )
-    parser.add_argument("--num_epoch", type=int, default = 2)
+    parser.add_argument("--num_epoch", type=int, default = 1)
 
     args = parser.parse_args()
     # args = parser.parse_known_args()[0] # for colab

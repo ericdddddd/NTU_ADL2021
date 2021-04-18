@@ -36,12 +36,13 @@ def main(args):
     train_dataset = TrainingDataset(train_instances)
     dev_dataset = TrainingDataset(dev_instances)
     train_dataloader = DataLoader(train_dataset, collate_fn = sec1_preprossing.collate_fn, shuffle=True, \
-                            batch_size = args.batch_size , num_workers = 2)
+                            batch_size = args.batch_size) # num_workers = 2
     dev_dataloader = DataLoader(dev_dataset, collate_fn = sec1_preprossing.collate_fn, shuffle=True, \
-                            batch_size = args.batch_size , num_workers = 2)                        
+                            batch_size = args.batch_size) # num_workers = 2  
+    # on windows , dataloader can't add num_workers may cause some problems !         
     logging.info("dataloader OK!")
     # model
-    model = BertForMultipleChoice.from_pretrained('bert-base-chinese')
+    model = BertForMultipleChoice.from_pretrained(model_name)
     print(model)
     model.to(device)
     # model parameters
@@ -58,9 +59,9 @@ def main(args):
     t_batch = len(train_dataloader) 
     v_batch = len(dev_dataloader)
 
-    total_loss, total_acc, best_acc = 0, 0, 0
 
     for epoch in range(1, args.num_epoch + 1):
+        total_loss, total_acc, best_acc = 0, 0, 0
         model.train()
         # train step
         for i, batch in enumerate(train_dataloader, start=1):

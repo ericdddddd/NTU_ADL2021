@@ -7,8 +7,6 @@ from pathlib import Path
 from transformers import BertTokenizerFast
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset, DataLoader
-from context_Train_dataset import TrainingDataset
-
 
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(message)s",
