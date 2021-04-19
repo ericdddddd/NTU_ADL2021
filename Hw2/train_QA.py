@@ -4,7 +4,7 @@ import numpy  as np
 import torch
 from torch.optim import AdamW
 from torch.utils.data import Dataset, DataLoader
-from transformers import BertForQuestionAnswering
+from transformers import BertForQuestionAnswering,BertTokenizerFast
 import QA_preprossing
 from QA_dataset import TrainingDataset
 import logging
@@ -53,7 +53,7 @@ def main(args):
     t_batch = len(train_dataloader) 
     v_batch = len(dev_dataloader)
 
-    for epoch in range(3, 4):
+    for epoch in range(1, args.num_epoch + 1):
         total_loss, total_acc = 0, 0
         model.train()
         # train step
@@ -143,7 +143,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default = "cuda:0"
     )
-    parser.add_argument("--num_epoch", type=int, default = 1)
+    parser.add_argument("--num_epoch", type=int, default = 3)
 
     args = parser.parse_args()
     # args = parser.parse_known_args()[0] # for colab

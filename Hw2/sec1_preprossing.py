@@ -34,7 +34,20 @@ def read_train_data(args):
 
     return all_data  ,  context
 
-def preprocess_data(args , train_data , context):
+def read_test_data(args):
+    #path
+    test_path = args.data_dir + "public.json"
+    context_path = args.data_dir + "context.json"
+    # Opening JSON file
+    logging.info("read public.json and context.json")
+    f_test = open(test_path , encoding = "utf-8")
+    f_context = open(context_path , encoding = "utf-8")
+    all_data = json.load(f_test)
+    context = json.load(f_context)
+    logging.info("finished read!")
+    return all_data  , context
+
+def preprocess_train_data(args , train_data , context):
     ''' Preprocess Data into training instances for BERT. '''
     instances = []
     max_question_length = 64
@@ -138,41 +151,91 @@ def preprocess_data(args , train_data , context):
 
     return train_data , validation_data
 
-# Dataloader collate_fn 
-def collate_fn(batch):
-        input_ids, attention_mask, token_type_ids, labels = zip(*batch)
-        input_ids = pad_sequence(input_ids, batch_first=True).transpose(1,2).contiguous()  # re-transpose
-        attention_mask = pad_sequence(attention_mask, batch_first=True).transpose(1,2).contiguous()
-        token_type_ids = pad_sequence(token_type_ids, batch_first=True).transpose(1,2).contiguous()
-        labels = torch.stack(labels)
-        return input_ids, attention_mask, token_type_ids, labels
-"""
-if __name__ == "__main__":
     
-    args = parse_args()
-    # args.output_dir.mkdir(parents=True, exist_ok=True)
+def preprocess_test_data(args , test_data , context):
+    ''' Preprocess Data into training instances for BERT. '''
+    instances = []
+    max_question_length = 40 # 配合QA使context盡量保留，可預測答案
+    max_input_length = args.input_length
+    tokenizer = BertTokenizerFast.from_pretrained('bert-base-chinese')
+    #processing data....
+    logging.info("data processing to BERT Token")
+    for i , data in enumerate(train_data):
+        # Make question tokens for BERT
+        question_tokens = tokenizer.tokenize(data['question']) # 轉換成BERT格式的token(str)
+        if len(question_tokens) > max_question_length:  # truncation
+            question_tokens = question_tokens[:max_question_length]
+        question_token_ids = tokenizer.convert_tokens_to_ids(question_tokens) # 將token轉換成ids
+        question_token_ids.insert(0, tokenizer.cls_token_id)
+        question_token_ids.append(tokenizer.sep_token_id)
 
-    train_data , context = read_train_data(args)
-    train_instances , dev_instances = preprocess_data(args , train_data  , context)
-    print("num. train_instances: %d" % len(train_instances))
-    print("num. dev_instances: %d" % len(dev_instances))
-    print("train_input_ids.T shape:", train_instances[0]['input_ids'].T.shape)
-    print("dev_input_ids.T shape:", dev_instances[0]['input_ids'].T.shape)
-    print(train_instances[0]['input_ids'].T)
+        paragraphs_ids = data['paragraphs']
+
+        # Make input instances for all question/context pairs
+        paired_input_ids = []
+        paired_attention_mask = []
+        paired_token_type_ids = []
+
+        for context_id in paragraphs_ids:
+
+            # get  context token_ids
+            context_text = context[context_id]
+            context_tokens = tokenizer.tokenize(context_text)
+            context_tokens_ids = tokenizer.convert_tokens_to_ids(context_tokens)
+            context_tokens_ids.append(tokenizer.sep_token_id)
+
+            # make input sequences for BERT (串接question , context)
+            input_ids = question_token_ids + context_tokens_ids
+            token_type_ids = [0 for token_id in question_token_ids]
+            token_type_ids.extend(1 for token_id in context_tokens_ids)
+            if len(input_ids) > max_input_length:  # truncation
+                input_ids = input_ids[:max_input_length]
+                if input_ids[-1] != tokenizer.sep_token_id:
+                    input_ids[-1] = tokenizer.sep_token_id
+                token_type_ids = token_type_ids[:max_input_length]
+            attention_mask = [1 for token_id in input_ids]
+                
+            # convert and collect inputs as tensors
+            input_ids = torch.LongTensor(input_ids)
+            attention_mask = torch.LongTensor(attention_mask)
+            token_type_ids = torch.LongTensor(token_type_ids)
+            paired_input_ids.append(input_ids)
+            paired_attention_mask.append(attention_mask)
+            paired_token_type_ids.append(token_type_ids)
+
+        # padding 選項至 7 個 ，paragraphs最大長度，讓其決定哪篇為正解
+        num_of_choice = 7
+        padding_len = num_of_choice - len(paragraphs_ids)
+        for padding in range(padding_len):
+            # make input sequences for BERT (串接question , context)
+            input_ids = question_token_ids
+            token_type_ids = [0 for token_id in question_token_ids]
+            attention_mask = [1 for token_id in input_ids]
+            # convert and collect inputs as tensors
+            input_ids = torch.LongTensor(input_ids)
+            attention_mask = torch.LongTensor(attention_mask)
+            token_type_ids = torch.LongTensor(token_type_ids)
+            paired_input_ids.append(input_ids)
+            paired_attention_mask.append(attention_mask)
+            paired_token_type_ids.append(token_type_ids)
+
+        # Pre-pad tensor pairs for efficiency
+        paired_input_ids = pad_sequence(paired_input_ids, batch_first=True)
+        paired_attention_mask = pad_sequence(paired_attention_mask, batch_first=True)
+        paired_token_type_ids = pad_sequence(paired_token_type_ids, batch_first=True)
+
+        # collect all inputs as a dictionary
+        instance = {}
+        instance['input_ids'] = paired_input_ids.T  # transpose for code efficiency
+        instance['attention_mask'] = paired_attention_mask.T
+        instance['token_type_ids'] = paired_token_type_ids.T
+        instances.append(instance)
+        print("Progress: %d/%d\r" % (i+1, len(test_data)), end='')
     
-    logging.info("generate dataloader....")
-    train_dataset = TrainingDataset(train_instances)
-    dev_dataset = TrainingDataset(dev_instances)
-    train_dataloader = DataLoader(train_dataset, collate_fn=collate_fn, shuffle=True, \
-                            batch_size = 2 , num_workers = 4)
-    logging.info("dataloader OK!")
-    for batch in train_dataloader:
-    input_ids, attention_mask, token_type_ids, labels = batch
-    break
-    print(input_ids.shape)
-    print(input_ids)
-    print(attention_mask)
-    print(labels)
-"""
+    logging.info("Finishing convert to BERT Token!")
+
+    return instances
+
+
 
 

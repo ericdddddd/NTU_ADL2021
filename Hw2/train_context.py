@@ -26,6 +26,15 @@ def evaluation(outputs, labels):
     correct = torch.sum(torch.eq(predict, labels)).item()
     return correct
 
+# Dataloader collate_fn 
+def collate_fn(batch):
+        input_ids, attention_mask, token_type_ids, labels = zip(*batch)
+        input_ids = pad_sequence(input_ids, batch_first=True).transpose(1,2).contiguous()  # re-transpose
+        attention_mask = pad_sequence(attention_mask, batch_first=True).transpose(1,2).contiguous()
+        token_type_ids = pad_sequence(token_type_ids, batch_first=True).transpose(1,2).contiguous()
+        labels = torch.stack(labels)
+        return input_ids, attention_mask, token_type_ids, labels
+
 def main(args):
     # load data
     train_data , context = sec1_preprossing.read_train_data(args)
@@ -35,9 +44,9 @@ def main(args):
     logging.info("generate dataloader....")
     train_dataset = TrainingDataset(train_instances)
     dev_dataset = TrainingDataset(dev_instances)
-    train_dataloader = DataLoader(train_dataset, collate_fn = sec1_preprossing.collate_fn, shuffle=True, \
+    train_dataloader = DataLoader(train_dataset, collate_fn = collate_fn, shuffle=True, \
                             batch_size = args.batch_size) # num_workers = 2
-    dev_dataloader = DataLoader(dev_dataset, collate_fn = sec1_preprossing.collate_fn, shuffle=True, \
+    dev_dataloader = DataLoader(dev_dataset, collate_fn = collate_fn, shuffle=True, \
                             batch_size = args.batch_size) # num_workers = 2  
     # on windows , dataloader can't add num_workers may cause some problems !         
     logging.info("dataloader OK!")
