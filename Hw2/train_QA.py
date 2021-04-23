@@ -19,12 +19,13 @@ logging.basicConfig(
 )
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model_name = './ckpt/QA/bert-base-chinese_epoch_2'
+model_name = 'bert-base-chinese'
 
 def main(args):
     # load data
     train_data , context = QA_preprossing.read_train_data(args)
     train_instances , dev_instances = QA_preprossing.preprocess_data(args, train_data , context)
+    
     # load dataloader
     logging.info("generate dataloader....")
     train_dataset = TrainingDataset(train_instances)
@@ -37,7 +38,7 @@ def main(args):
     logging.info("dataloader OK!")
     # model
     model = BertForQuestionAnswering.from_pretrained(model_name)
-    print(model)
+    # print(model)
     model.to(device)
     # model parameters
     total = sum(p.numel() for p in model.parameters())
@@ -50,8 +51,12 @@ def main(args):
     # best_state_dict = model.state_dict()
     start_time = time()
 
-    t_batch = len(train_dataloader) 
+    t_batch = len(train_dataloader)
+    print(t_batch)
     v_batch = len(dev_dataloader)
+    print(v_batch)
+
+    dev_loss = 1e10
 
     for epoch in range(1, args.num_epoch + 1):
         total_loss, total_acc = 0, 0
@@ -76,10 +81,7 @@ def main(args):
                 % (epoch, args.num_epoch, i, len(train_dataloader), loss, elapsed_time), end='')
 
         print('\nTrain | Loss:{:.5f}'.format(total_loss/t_batch))
-        # Save parameters of each epoch
-        filename = "%s_epoch_%d" % (model_name, epoch)
-        model.save_pretrained(args.ckpt_dir / filename)
-
+        
         # Get avg. loss on development set
         print("Epoch: %d/%d | Validating...                           \r" % (epoch, args.num_epoch), end='')
         dev_total_loss = 0
@@ -98,7 +100,9 @@ def main(args):
         elapsed_time = timedelta(seconds=int(elapsed_time))
         print("Epoch: %d/%d | dev_loss=%.5f |%s                      " \
             % (epoch, args.num_epoch , dev_avg_loss , elapsed_time))
-
+        # Save parameters of each epoch
+        filename = "lr_epoch_%d_loss_%.3f" % (epoch, dev_avg_loss)
+        model.save_pretrained(args.ckpt_dir / filename)
 
     
 def parse_args() -> Namespace:
@@ -125,7 +129,7 @@ def parse_args() -> Namespace:
         "--split_ratio",
         type = float,
         help = "split ratio for train_dataset",
-        default = 0.9,
+        default = 0.95,
     )
     parser.add_argument(
         "--input_length",
@@ -143,7 +147,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default = "cuda:0"
     )
-    parser.add_argument("--num_epoch", type=int, default = 3)
+    parser.add_argument("--num_epoch", type=int, default = 2)
 
     args = parser.parse_args()
     # args = parser.parse_known_args()[0] # for colab

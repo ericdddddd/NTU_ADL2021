@@ -11,6 +11,7 @@ from context_dataset import TestingDataset
 import sec1_preprossing
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
+from torch.nn.utils.rnn import pad_sequence
 
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(message)s",
@@ -19,24 +20,26 @@ logging.basicConfig(
 )
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model_name = 'bert-base-chinese' # choose pretrained model Path
+model_name = 'C:/Users/User/Desktop/bert/context/bert-base-chinese_epoch_1_qes_40' # choose pretrained model Path
 
 def collate_fn(batch):
-        input_ids, attention_mask, token_type_ids, labels = zip(*batch)
+        input_ids, attention_mask, token_type_ids = zip(*batch)
         input_ids = pad_sequence(input_ids, batch_first=True).transpose(1,2).contiguous()  # re-transpose
         attention_mask = pad_sequence(attention_mask, batch_first=True).transpose(1,2).contiguous()
         token_type_ids = pad_sequence(token_type_ids, batch_first=True).transpose(1,2).contiguous()
         return input_ids, attention_mask, token_type_ids
 
 def choose_context(args , test_instances):
-
+    print(device)
+    print(model_name)
     logging.info("generate dataloader....")
     test_dataset = TestingDataset(test_instances)
     test_dataloader = DataLoader(test_dataset, collate_fn = collate_fn, shuffle = False, \
-                        batch_size = args.context_batch_size , num_workers = 2)                 
+                        batch_size = args.context_batch_size) # , num_workers = 2                 
     logging.info("dataloader OK!")
 
     model = BertForMultipleChoice.from_pretrained(model_name)
+    print(model)
     model.to(device)
     start_time = time()
 
@@ -45,18 +48,18 @@ def choose_context(args , test_instances):
     pred_contexts = [] # test_dataloader經model後挑選出分數最高的index ,後續取出該index相關的tensor做QA
     logging.info("run BERT choose context model !!!")
     for i,batch in enumerate(test_dataloader):
-    batch = (tensor.to(device) for tensor in batch)
-    input_ids, attention_mask, token_type_ids = batch
-    with torch.no_grad():
-        outputs = model(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
-        cls_scores = outputs.logits
-        highest_score = torch.argmax(cls_scores , dim = 1).numpy()
-        pred_contexts.extend(highest_score)
-        elapsed_time = time() - start_time
-        elapsed_time = timedelta(seconds=int(elapsed_time))
-        print("\r | Batch: %d/%d |%s" \
-                    % (i, t_batch  ,elapsed_time), end='')
+        batch = (tensor.to(device) for tensor in batch)
+        input_ids, attention_mask, token_type_ids = batch
+        with torch.no_grad():
+            outputs = model(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
+            cls_scores = outputs.logits
+            highest_score = torch.argmax(cls_scores , dim = 1).cpu().numpy()
+            pred_contexts.extend(highest_score)
+            elapsed_time = time() - start_time
+            elapsed_time = timedelta(seconds=int(elapsed_time))
+            print("\r | Batch: %d/%d |%s" \
+                        % (i, t_batch  ,elapsed_time), end='')
     logging.info("test data predict finished!!!")
-
+    
     return pred_contexts
     

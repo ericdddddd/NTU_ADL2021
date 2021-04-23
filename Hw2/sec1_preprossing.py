@@ -7,8 +7,6 @@ from pathlib import Path
 from transformers import BertTokenizerFast
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset, DataLoader
-from context_Train_dataset import TrainingDataset
-
 
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(message)s",
@@ -50,7 +48,7 @@ def read_test_data(args):
 def preprocess_train_data(args , train_data , context):
     ''' Preprocess Data into training instances for BERT. '''
     instances = []
-    max_question_length = 64
+    max_question_length = 40
     max_input_length = args.input_length
     tokenizer = BertTokenizerFast.from_pretrained('bert-base-chinese')
     #processing data....
@@ -160,7 +158,7 @@ def preprocess_test_data(args , test_data , context):
     tokenizer = BertTokenizerFast.from_pretrained('bert-base-chinese')
     #processing data....
     logging.info("data processing to BERT Token")
-    for i , data in enumerate(train_data):
+    for i , data in enumerate(test_data):
         # Make question tokens for BERT
         question_tokens = tokenizer.tokenize(data['question']) # 轉換成BERT格式的token(str)
         if len(question_tokens) > max_question_length:  # truncation

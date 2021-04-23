@@ -1,17 +1,18 @@
-from transformers import BertTokenizer, BertForQuestionAnswering
-import torch
+"""
+import pickle
 
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-model = BertForQuestionAnswering.from_pretrained('bert-base-uncased')
+with open ('pred_context', 'rb') as fp:
+    itemlist = pickle.load(fp)
+print(itemlist)
 
-question, text = "Who was Jim Henson?", "Jim Henson was a nice puppet"
-inputs = tokenizer(question, text, return_tensors='pt')
-start_positions = torch.tensor([1])
-end_positions = torch.tensor([3])
+"""
+"""
+import QA_preprossing
+from transformers import BertTokenizerFast
 
-outputs = model(**inputs, start_positions=start_positions, end_positions=end_positions)
-loss = outputs.loss
-start_scores = outputs.start_logits
-end_scores = outputs.end_logits
-print(start_scores)
-print(end_scores)
+tokenizer = BertTokenizerFast.from_pretrained('bert-base-chinese')
+train_data , context = QA_preprossing.read_train_data(args)
+QA_preprossing.preprocess_data(args, train_data[:10] , context)
+"""
+for i in range(5,-1,-1):
+    print(i)
