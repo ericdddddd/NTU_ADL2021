@@ -12,6 +12,7 @@ import sec1_preprossing
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from torch.nn.utils.rnn import pad_sequence
+import json
 
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(message)s",
@@ -29,9 +30,12 @@ def collate_fn(batch):
         token_type_ids = pad_sequence(token_type_ids, batch_first=True).transpose(1,2).contiguous()
         return input_ids, attention_mask, token_type_ids
 
-def choose_context(args , test_instances):
-    print(device)
-    print(model_name)
+def main(args):
+    # load data and processing
+
+    test_data , context , ids = sec1_preprossing.read_test_data(args) # read data 
+    test_instances = sec1_preprossing.preprocess_test_data(args,test_data,context)
+    # test data format for BERT choose context model
     logging.info("generate dataloader....")
     test_dataset = TestingDataset(test_instances)
     test_dataloader = DataLoader(test_dataset, collate_fn = collate_fn, shuffle = False, \
@@ -39,7 +43,6 @@ def choose_context(args , test_instances):
     logging.info("dataloader OK!")
 
     model = BertForMultipleChoice.from_pretrained(model_name)
-    print(model)
     model.to(device)
     start_time = time()
 
@@ -60,6 +63,48 @@ def choose_context(args , test_instances):
             print("\r | Batch: %d/%d |%s" \
                         % (i, t_batch  ,elapsed_time), end='')
     logging.info("test data predict finished!!!")
+
+    logging.info("write context slection json.....")
+    predict_ids = {}
+    for index in range(len(pred_contexts)):
+        predict_ids[ids[index]] = int(pred_contexts[index])
+    with open( args.pred_dir / 'public_context_predict.json', 'w', encoding='utf-8') as f:
+        json.dump(predict_ids, f, ensure_ascii=False, indent=4)
     
-    return pred_contexts
+
+def parse_args() -> Namespace:
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--data_dir",
+        type= str,
+        help="Directory to the dataset.",
+        default="./dataset/",
+    )
+    parser.add_argument(
+        "--pred_dir",
+        type = Path,
+        help="Directory to the predict files.",
+        default="./pred_file/",
+    )
+    parser.add_argument(
+        "--input_length",
+        type= int,
+        help= "BERT token maximum input length",
+        default = 512,
+    )
+    # batch size
+    parser.add_argument("--context_batch_size", type=int, default = 3)
+    # training
+    parser.add_argument(
+        "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default = "cuda:0"
+    )
+    args = parser.parse_args()
+    # args = parser.parse_known_args()[0] # for colab
+    return args
+
+if __name__ == "__main__":
+    args = parse_args()
+    args.pred_dir.mkdir(parents=True, exist_ok=True)
+    main(args)
+
     

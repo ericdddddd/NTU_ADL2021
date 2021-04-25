@@ -42,8 +42,11 @@ def read_test_data(args):
     f_context = open(context_path , encoding = "utf-8")
     all_data = json.load(f_test)
     context = json.load(f_context)
+    ids = []
+    for data in all_data:
+        ids.append(data['id'])
     logging.info("finished read!")
-    return all_data  , context
+    return all_data  , context , ids
 
 def preprocess_train_data(args , train_data , context):
     ''' Preprocess Data into training instances for BERT. '''

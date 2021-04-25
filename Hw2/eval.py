@@ -114,7 +114,7 @@ def main():
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
     os.environ["KMP_WARNINGS"] = "FALSE"
     data_path = './dataset/public.json'
-    prediction_path = 'predict4.json'
+    prediction_path = './result/eval_predictions2.json'
     output_path = 'output.json'
     print(f'[-] Original data file: {data_path}')
     print(f'[-] Model prediction file: {prediction_path}')
