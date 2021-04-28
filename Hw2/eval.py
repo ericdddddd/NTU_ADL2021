@@ -113,9 +113,7 @@ def main():
     # Surpress TensorFlow and OpenMP messages
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
     os.environ["KMP_WARNINGS"] = "FALSE"
-    data_path = './dataset/public.json'
-    prediction_path = 'eval_predictions.json'
-    output_path = 'output.json'
+    
     print(f'[-] Original data file: {data_path}')
     print(f'[-] Model prediction file: {prediction_path}')
     print(f'[-] Evaluation output path: {output_path}\n')
@@ -134,11 +132,10 @@ def main():
     result = compute_metrics(answers, predictions, tokenizer)
 
     # Save evaluation result
-    # save_json(result, output_path)
+    save_json(result, output_path)
     pprint(result)
 
 
 if __name__ == "__main__":
-    #kwargs = parse_args()
-    #main(**kwargs)
-    main()
+    kwargs = parse_args()
+    main(**kwargs)

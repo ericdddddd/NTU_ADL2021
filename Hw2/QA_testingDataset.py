@@ -63,9 +63,6 @@ class QA_testDataset(datasets.GeneratorBasedBuilder):
         context = json.load(f_context)
         predict_ids = json.load(f_predict_ids)
         
-        #feature = all_data[0].keys()
-        #if 'relevant' in feature : fill_value = True
-        #count = 0
         for data in all_data:
           id_ = data['id']
           choice = predict_ids[id_]
@@ -76,12 +73,7 @@ class QA_testDataset(datasets.GeneratorBasedBuilder):
               choose_id = data['paragraphs'][random_choice]
           else:
               choose_id = data['paragraphs'][choice]
-          """   
-          if fill_value and count < 25: 
-              if(choose_id != data['relevant']):
-                    choose_id = data['relevant']
-                    count += 1
-          """
+
           context_ = context[choose_id]
           answer_starts = []
           answers = []
