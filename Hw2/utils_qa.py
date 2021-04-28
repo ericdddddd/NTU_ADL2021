@@ -213,7 +213,7 @@ def postprocess_qa_predictions(
         assert os.path.isdir(output_dir), f"{output_dir} is not a directory."
 
         prediction_file = os.path.join(
-            output_dir, "predictions.json" if prefix is None else f"{prefix}_predictions2.json"
+            output_dir, "predictions.json" if prefix is None else f"{prefix}_predictions.json"
         )
         logger.info(f"Saving predictions to {prediction_file}.")
         with open(prediction_file, "w" , encoding='utf-8') as writer:

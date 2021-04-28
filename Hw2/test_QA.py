@@ -68,6 +68,18 @@ def parse_args():
         " sequences shorter will be padded if `--pad_to_max_lengh` is passed.",
     )
     parser.add_argument(
+        "--test_file",
+        type= str,
+        help="Directory to the dataset.",
+        default="./dataset/public.json",
+    )
+    parser.add_argument(
+        "--context_file",
+        type= str,
+        help="Directory to the dataset.",
+        default="./dataset/context.json",
+    )
+    parser.add_argument(
         "--pad_to_max_length",
         action="store_true",
         help="If passed, pad all samples to `max_seq_length`. Otherwise, dynamic padding is used.",
@@ -75,7 +87,7 @@ def parse_args():
     parser.add_argument(
         "--model_name_or_path",
         type=str,
-        default = 'C:/Users/User/Desktop/bert/QA/epoch_2_step_18000',
+        default = 'C:/Users/User/Desktop/bert/QA/roberta_QA',
         help="Path to pretrained model or model identifier from huggingface.co/models.",
         # required=True,
     )
@@ -88,7 +100,7 @@ def parse_args():
     parser.add_argument(
         "--tokenizer_name",
         type=str,
-        default= 'bert-base-chinese',
+        default= 'hfl/chinese-roberta-wwm-ext',
         help="Pretrained tokenizer name or path if not the same as model_name",
     )
     parser.add_argument(
@@ -180,7 +192,7 @@ def main():
 
     if args.dataset_name is not None:
         # Downloading and loading a dataset from the hub.
-        test_file_path = ['./dataset/public.json' , './dataset/context.json' , './pred_file/public_context_predict.json']
+        test_file_path = [args.test_file , args.context_file, './pred_file/roberta_context_predict.json']
         raw_datasets = load_dataset(args.dataset_name, data_files = {'test':test_file_path})
     else:
         raise ValueError("Need to load QA_testdataset to predict_file")

@@ -4,7 +4,7 @@ import numpy  as np
 import torch
 from torch.optim import AdamW
 from torch.utils.data import Dataset, DataLoader
-from transformers import BertTokenizerFast, BertForMultipleChoice
+from transformers import AutoTokenizer, AutoModelForMultipleChoice
 import sec1_preprossing
 from context_Train_dataset import  TrainingDataset
 import logging
@@ -51,7 +51,7 @@ def main(args):
     # on windows , dataloader can't add num_workers may cause some problems !         
     logging.info("dataloader OK!")
     # model
-    model = BertForMultipleChoice.from_pretrained(model_name)
+    model = AutoModelForMultipleChoice.from_pretrained(args.model_name)
     print(model)
     model.to(device)
     # model parameters
@@ -121,10 +121,16 @@ def main(args):
 def parse_args() -> Namespace:
     parser = ArgumentParser()
     parser.add_argument(
-        "--data_dir",
+        "--train_file",
         type= str,
         help="Directory to the dataset.",
-        default="./dataset/",
+        default="./dataset/train.json",
+    )
+    parser.add_argument(
+        "--context_file",
+        type= str,
+        help="Directory to the dataset.",
+        default="./dataset/context.json",
     )
     parser.add_argument(
         "--cache_dir",
@@ -137,6 +143,18 @@ def parse_args() -> Namespace:
         type = Path,
         help="Directory to save the model file.",
         default="./ckpt/choose_context/",
+    )
+    parser.add_argument(
+        "--model_name",
+        type = str,
+        help = "BERT model_name",
+        default = 'hfl/chinese-roberta-wwm-ext',
+    )
+    parser.add_argument(
+        "--tokenizer_name",
+        type=str,
+        default= 'hfl/chinese-roberta-wwm-ext',
+        help="Pretrained tokenizer name or path if not the same as model_name",
     )
     parser.add_argument(
         "--split_ratio",

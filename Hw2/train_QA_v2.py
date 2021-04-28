@@ -80,7 +80,7 @@ def parse_args():
     parser.add_argument(
         "--model_name_or_path",
         type=str,
-        default = 'C:/Users/User/Desktop/bert/QA/roberta_epoch_2_step_18000',
+        default = 'hfl/chinese-roberta-wwm-ext',
         help="Path to pretrained model or model identifier from huggingface.co/models.",
         # required=True,
     )
@@ -188,7 +188,7 @@ def parse_args():
     parser.add_argument(
         "--max_val_samples",
         type=int,
-        default=None,
+        default= 200,
         help="For debugging purposes or quicker training, truncate the number of validation examples to this "
         "value if set.",
     )
@@ -527,17 +527,6 @@ def main():
             output_dir=args.output_dir,
             prefix=stage,
         )
-        # Format the result to the format the metric expects.
-        if args.version_2_with_negative:
-            formatted_predictions = [
-                {"id": k, "prediction_text": v, "no_answer_probability": 0.0} for k, v in predictions.items()
-            ]
-        else:
-            formatted_predictions = [{"id": k, "prediction_text": v} for k, v in predictions.items()]
-
-        references = [{"id": ex["id"], "answers": ex[answer_column_name]} for ex in examples]
-        return EvalPrediction(predictions=formatted_predictions, label_ids=references)
-
     # metric = load_metric("squad_v2" if args.version_2_with_negative else "squad")
 
     # Create and fill numpy array of size len_of_validation_data * max_length_of_output_tensor
@@ -621,7 +610,7 @@ def main():
     logger.info(f"  Total optimization steps = {args.max_train_steps}")
 
     # Only show the progress bar once on each machine.
-    """
+
     progress_bar = tqdm(range(args.max_train_steps), disable=not accelerator.is_local_main_process)
     completed_steps = 0
 
@@ -641,11 +630,42 @@ def main():
 
             if completed_steps >= args.max_train_steps:
                 break
-            if completed_steps % 2000 == 0 and completed_steps > 0:
+            if completed_steps % 50 == 0 and completed_steps > 0:
             
-                filename = "epoch_%d_step_%d" % (epoch, completed_steps)
-                model.save_pretrained(args.ckpt_dir / filename)
-    """
+                # filename = "epoch_%d_step_%d" % (epoch, completed_steps)
+                # model.save_pretrained(args.ckpt_dir / filename)
+                all_start_logits = []
+                all_end_logits = []
+                model.eval()
+                for step, batch in enumerate(eval_dataloader):
+                  with torch.no_grad():
+                    outputs = model(**batch)
+                    start_logits = outputs.start_logits
+                    end_logits = outputs.end_logits
+
+                    if not args.pad_to_max_length:  # necessary to pad predictions and labels for being gathered
+                        start_logits = accelerator.pad_across_processes(start_logits, dim=1, pad_index=-100)
+                        end_logits = accelerator.pad_across_processes(end_logits, dim=1, pad_index=-100)
+
+                    all_start_logits.append(accelerator.gather(start_logits).cpu().numpy())
+                    all_end_logits.append(accelerator.gather(end_logits).cpu().numpy())
+
+                max_len = max([x.shape[1] for x in all_start_logits])  # Get the max_length of the tensor
+
+                # concatenate the numpy array
+                start_logits_concat = create_and_fill_np_array(all_start_logits, eval_dataset, max_len)
+                end_logits_concat = create_and_fill_np_array(all_end_logits, eval_dataset, max_len)
+
+                # delete the list of numpy arrays
+                # del all_start_logits
+                # del all_end_logits
+
+                eval_dataset.set_format(type=None, columns=list(eval_dataset.features.keys()))
+                outputs_numpy = (start_logits_concat, end_logits_concat)
+                post_processing_function(eval_examples, eval_dataset, outputs_numpy)
+                eval_dataset.set_format(type="torch", columns=["attention_mask", "input_ids", "token_type_ids"])
+                model.train()
+    
     # Validation
     all_start_logits = []
     all_end_logits = []
@@ -675,7 +695,7 @@ def main():
 
     eval_dataset.set_format(type=None, columns=list(eval_dataset.features.keys()))
     outputs_numpy = (start_logits_concat, end_logits_concat)
-    prediction = post_processing_function(eval_examples, eval_dataset, outputs_numpy)
+    post_processing_function(eval_examples, eval_dataset, outputs_numpy)
     
     # eval_metric = metric.compute(predictions=prediction.predictions, references=prediction.label_ids)
     # logger.info(f"Evaluation metrics: {eval_metric}")

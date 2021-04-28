@@ -4,7 +4,7 @@ import numpy  as np
 import torch
 from torch.optim import AdamW
 from torch.utils.data import Dataset, DataLoader
-from transformers import BertTokenizerFast, BertForMultipleChoice
+from transformers import AutoTokenizer, AutoModelForMultipleChoice
 import logging
 from tqdm import trange
 from context_dataset import TestingDataset
@@ -21,7 +21,6 @@ logging.basicConfig(
 )
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model_name = 'C:/Users/User/Desktop/bert/context/bert-base-chinese_epoch_1_qes_40' # choose pretrained model Path
 
 def collate_fn(batch):
         input_ids, attention_mask, token_type_ids = zip(*batch)
@@ -42,7 +41,7 @@ def main(args):
                         batch_size = args.context_batch_size) # , num_workers = 2                 
     logging.info("dataloader OK!")
 
-    model = BertForMultipleChoice.from_pretrained(model_name)
+    model = AutoModelForMultipleChoice.from_pretrained(args.model_name)
     model.to(device)
     start_time = time()
 
@@ -68,17 +67,23 @@ def main(args):
     predict_ids = {}
     for index in range(len(pred_contexts)):
         predict_ids[ids[index]] = int(pred_contexts[index])
-    with open( args.pred_dir / 'public_context_predict.json', 'w', encoding='utf-8') as f:
+    with open( args.pred_dir / 'roberta_context_predict.json', 'w', encoding='utf-8') as f:
         json.dump(predict_ids, f, ensure_ascii=False, indent=4)
     
 
 def parse_args() -> Namespace:
     parser = ArgumentParser()
     parser.add_argument(
-        "--data_dir",
+        "--test_file",
         type= str,
         help="Directory to the dataset.",
-        default="./dataset/",
+        default="./dataset/public.json",
+    )
+    parser.add_argument(
+        "--context_file",
+        type= str,
+        help="Directory to the dataset.",
+        default="./dataset/context.json",
     )
     parser.add_argument(
         "--pred_dir",
@@ -91,6 +96,18 @@ def parse_args() -> Namespace:
         type= int,
         help= "BERT token maximum input length",
         default = 512,
+    )
+    parser.add_argument(
+        "--model_name",
+        type = str,
+        help = "BERT model_name",
+        default = 'C:/Users/User/Desktop/bert/context/roberta_0.935',
+    )
+    parser.add_argument(
+        "--tokenizer_name",
+        type=str,
+        default= 'hfl/chinese-roberta-wwm-ext',
+        help="Pretrained tokenizer name or path if not the same as model_name",
     )
     # batch size
     parser.add_argument("--context_batch_size", type=int, default = 3)

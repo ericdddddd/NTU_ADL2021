@@ -4,7 +4,7 @@ import logging
 import random
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
-from transformers import BertTokenizerFast
+from transformers import AutoTokenizer
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset, DataLoader
 
@@ -17,8 +17,8 @@ logging.basicConfig(
 def read_train_data(args):
 
     #path
-    train_path = args.data_dir + "train.json"
-    context_path = args.data_dir + "context.json"
+    train_path = args.train_file
+    context_path = args.context_file
     # Opening JSON file
     logging.info("read train.json and context.json")
     f_train = open(train_path , encoding = "utf-8")
@@ -34,10 +34,10 @@ def read_train_data(args):
 
 def read_test_data(args):
     #path
-    test_path = args.data_dir + "public.json"
-    context_path = args.data_dir + "context.json"
+    test_path = args.test_file
+    context_path = args.context_file
     # Opening JSON file
-    logging.info("read public.json and context.json")
+    logging.info("read test data and context.json")
     f_test = open(test_path , encoding = "utf-8")
     f_context = open(context_path , encoding = "utf-8")
     all_data = json.load(f_test)
@@ -53,7 +53,7 @@ def preprocess_train_data(args , train_data , context):
     instances = []
     max_question_length = 40
     max_input_length = args.input_length
-    tokenizer = BertTokenizerFast.from_pretrained('bert-base-chinese')
+    tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name)
     #processing data....
     logging.info("data processing to BERT Token")
     for i , data in enumerate(train_data):
@@ -158,7 +158,7 @@ def preprocess_test_data(args , test_data , context):
     instances = []
     max_question_length = 40 # 配合QA使context盡量保留，可預測答案
     max_input_length = args.input_length
-    tokenizer = BertTokenizerFast.from_pretrained('bert-base-chinese')
+    tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name)
     #processing data....
     logging.info("data processing to BERT Token")
     for i , data in enumerate(test_data):
