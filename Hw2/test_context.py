@@ -67,7 +67,7 @@ def main(args):
     predict_ids = {}
     for index in range(len(pred_contexts)):
         predict_ids[ids[index]] = int(pred_contexts[index])
-    with open( args.pred_dir / 'roberta_context_predict.json', 'w', encoding='utf-8') as f:
+    with open( args.pred_dir / 'context_predict.json', 'w', encoding='utf-8') as f:
         json.dump(predict_ids, f, ensure_ascii=False, indent=4)
     
 
@@ -101,7 +101,7 @@ def parse_args() -> Namespace:
         "--model_name",
         type = str,
         help = "BERT model_name",
-        default = 'C:/Users/User/Desktop/bert/context/roberta_0.935',
+        default = 'C:/Users/User/Desktop/bert/context/roberta_context',
     )
     parser.add_argument(
         "--tokenizer_name",

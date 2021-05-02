@@ -192,7 +192,7 @@ def main():
 
     if args.dataset_name is not None:
         # Downloading and loading a dataset from the hub.
-        test_file_path = [args.test_file , args.context_file, './pred_file/roberta_context_predict.json']
+        test_file_path = [args.test_file , args.context_file, './pred_file/context_predict.json']
         raw_datasets = load_dataset(args.dataset_name, data_files = {'test':test_file_path})
     else:
         raise ValueError("Need to load QA_testdataset to predict_file")
