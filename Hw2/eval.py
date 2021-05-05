@@ -114,11 +114,16 @@ def main():
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
     os.environ["KMP_WARNINGS"] = "FALSE"
     data_path = './dataset/public.json'
+<<<<<<< HEAD
     prediction_path = './result/predict.json'
 
+=======
+    prediction_path = '18807_predictions.json'
+    output_path = 'output.json'
+>>>>>>> 620fb8cdc8046cc6569d7c8a09185e64bfb565cc
     print(f'[-] Original data file: {data_path}')
     print(f'[-] Model prediction file: {prediction_path}')
-    #print(f'[-] Evaluation output path: {output_path}\n')
+    print(f'[-] Evaluation output path: {output_path}\n')
 
     # Load gold answers
     data = load_json(data_path)
@@ -134,7 +139,7 @@ def main():
     result = compute_metrics(answers, predictions, tokenizer)
 
     # Save evaluation result
-    #save_json(result, output_path)
+    save_json(result, output_path)
     pprint(result)
 
 
