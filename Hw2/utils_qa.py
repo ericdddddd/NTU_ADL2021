@@ -210,11 +210,14 @@ def postprocess_qa_predictions(
 
     # If we have an output_dir, let's save all those dicts.
     if output_dir is not None:
+        """
         assert os.path.isdir(output_dir), f"{output_dir} is not a directory."
 
         prediction_file = os.path.join(
             output_dir, "predictions.json" if prefix is None else f"{prefix}_predictions.json"
         )
+        """
+        prediction_file = output_dir
         logger.info(f"Saving predictions to {prediction_file}.")
         with open(prediction_file, "w" , encoding='utf-8') as writer:
             json.dump(all_predictions, writer, ensure_ascii=False, indent=4)

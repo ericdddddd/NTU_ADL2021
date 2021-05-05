@@ -72,12 +72,21 @@ def parse_args():
         type= str,
         help="Directory to the dataset.",
         default="./dataset/public.json",
+        required = True
     )
     parser.add_argument(
         "--context_file",
         type= str,
         help="Directory to the dataset.",
         default="./dataset/context.json",
+        required = True
+    )
+    parser.add_argument(
+        "--predict_file",
+        type= str,
+        help="store final result.",
+        default = None ,
+        required = True
     )
     parser.add_argument(
         "--pad_to_max_length",
@@ -87,7 +96,7 @@ def parse_args():
     parser.add_argument(
         "--model_name_or_path",
         type=str,
-        default = 'C:/Users/User/Desktop/bert/QA/roberta_QA',
+        default = './model/QA',
         help="Path to pretrained model or model identifier from huggingface.co/models.",
         # required=True,
     )
@@ -100,7 +109,7 @@ def parse_args():
     parser.add_argument(
         "--tokenizer_name",
         type=str,
-        default= 'hfl/chinese-roberta-wwm-ext',
+        default= './tokenizer',
         help="Pretrained tokenizer name or path if not the same as model_name",
     )
     parser.add_argument(
@@ -326,7 +335,7 @@ def main():
             n_best_size=args.n_best_size,
             max_answer_length=args.max_answer_length,
             null_score_diff_threshold=args.null_score_diff_threshold,
-            output_dir=args.output_dir,
+            output_dir=args.predict_file,
             prefix=stage,
         )
         # Format the result to the format the metric expects.

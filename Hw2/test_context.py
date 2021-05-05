@@ -78,12 +78,21 @@ def parse_args() -> Namespace:
         type= str,
         help="Directory to the dataset.",
         default="./dataset/public.json",
+        required = True
     )
     parser.add_argument(
         "--context_file",
         type= str,
         help="Directory to the dataset.",
         default="./dataset/context.json",
+        required = True
+    )
+    parser.add_argument(
+        "--predict_file",
+        type= str,
+        help="store final result.",
+        default = None ,
+        required = True
     )
     parser.add_argument(
         "--pred_dir",
@@ -101,12 +110,12 @@ def parse_args() -> Namespace:
         "--model_name",
         type = str,
         help = "BERT model_name",
-        default = 'C:/Users/User/Desktop/bert/context/roberta_context',
+        default = './model/context',
     )
     parser.add_argument(
         "--tokenizer_name",
         type=str,
-        default= 'hfl/chinese-roberta-wwm-ext',
+        default= './tokenizer',
         help="Pretrained tokenizer name or path if not the same as model_name",
     )
     # batch size
