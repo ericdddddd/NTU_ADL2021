@@ -22,7 +22,7 @@ def parse_args():
 
 def load_json(json_path):
     print(f'[*] Loading {json_path}...', end='', flush=True)
-    with open(json_path,encoding = "utf-8") as f:
+    with open(json_path) as f:
         result = json.load(f)
     print('done')
 
@@ -109,18 +109,11 @@ def compute_metrics(answers, predictions, tokenizer):
     return result
 
 
-def main():
+def main(data_path, prediction_path, output_path):
     # Surpress TensorFlow and OpenMP messages
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
     os.environ["KMP_WARNINGS"] = "FALSE"
-    data_path = './dataset/public.json'
-<<<<<<< HEAD
-    prediction_path = './result/predict.json'
 
-=======
-    prediction_path = '18807_predictions.json'
-    output_path = 'output.json'
->>>>>>> 620fb8cdc8046cc6569d7c8a09185e64bfb565cc
     print(f'[-] Original data file: {data_path}')
     print(f'[-] Model prediction file: {prediction_path}')
     print(f'[-] Evaluation output path: {output_path}\n')
@@ -144,6 +137,5 @@ def main():
 
 
 if __name__ == "__main__":
-    # kwargs = parse_args()
-    # main(**kwargs)
-    main()
+    kwargs = parse_args()
+    main(**kwargs)
