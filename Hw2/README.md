@@ -9,7 +9,9 @@ context_dataset.py : 用於context selection ， 存放 pytorch dataset 資料�
 train_context.py , test_context.py : 訓練及測試context model ，詳細參數參見argparse。
 <br>
 QA_trainingDataset.py , QA_testingDataset.py : transfomers-datasets格式，其中QA_testingDataset需先執行context selection model得到結果才可使用。
+<br>
 train_QA , train_QA_v2 :皆為訓練QA model，v2加了每經過幾個steps會紀錄chechpoint及驗證集的輸出結果。
+<br>
 test_QA : 需先執行test_context.py，得到選取context得結果，才可執行此檔案獲得作業2的輸出。
 ## Environment
 ```shell
