@@ -13,6 +13,7 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from torch.nn.utils.rnn import pad_sequence
 import json
+import os
 
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(message)s",
@@ -31,7 +32,11 @@ def collate_fn(batch):
 
 def main(args):
     # load data and processing
-
+    pred_file = args.predict_file
+    pred_file_path = args.predict_file[:args.predict_file.rfind('/')]
+    if not os.path.exists(pred_file_path):
+        print('mkdir ' + pred_file_path)
+        os.mkdir(pred_file_path)
     test_data , context , ids = sec1_preprossing.read_test_data(args) # read data 
     test_instances = sec1_preprossing.preprocess_test_data(args,test_data,context)
     # test data format for BERT choose context model
