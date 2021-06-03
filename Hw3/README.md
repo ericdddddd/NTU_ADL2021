@@ -2,7 +2,7 @@
 
 ## Task
 
-給定文章及標題，訓練出一個能生成文章標題的模型，使用mt5-small model
+給定文章及標題，訓練出一個能生成文章標題的模型，使用mt5-small model。
 
 ## File explain
 
@@ -39,5 +39,5 @@ bash ./run.sh 測試檔案路徑  預測檔案路徑
 
 ```shell
 # train mt5-small model
-python train.py # 需放入訓練、驗證集檔案的路徑
+python train.py # 需指定模型種類，訓練、驗證集檔案的路徑
 ```
