@@ -129,7 +129,7 @@ def parse_args():
     parser.add_argument(
         "--per_device_eval_batch_size",
         type=int,
-        default= 2,
+        default= 16,
         help="Batch size (per device) for the evaluation dataloader.",
     )
     parser.add_argument("--output_file", type=str, default = None, required = True , help="Where to store the final model.")
