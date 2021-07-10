@@ -1,0 +1,1 @@
+python3.8 run_generation.py --input "${1}" --output "${2}"
